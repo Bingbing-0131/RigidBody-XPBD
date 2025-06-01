@@ -27,8 +27,8 @@ from pyquaternion import Quaternion
 def compute_omega_from_quaternion(R_before, R_after, dt):
     q1 = Quaternion(matrix=R_before)
     q2 = Quaternion(matrix=R_after)
-    print(q1)
-    print(q2)
+    #print(q1)
+    #print(q2)
     
     # Compute relative quaternion
     q_rel = q2 * q1.inverse
@@ -54,7 +54,7 @@ def compute_omega_from_quaternion(R_before, R_after, dt):
         angle = 2 * np.arctan2(q_vec_norm, abs(q_rel.scalar))
         omega = (angle / dt) * (q_vec / q_vec_norm)
     
-    print(f"Angular velocity: {omega}, Relative quaternion: {q_rel}")
+    #print(f"Angular velocity: {omega}, Relative quaternion: {q_rel}")
     return omega
 
 
@@ -80,8 +80,8 @@ class Rigidbody:
         self.inv_mass = 0.0
         self.torque = np.zeros(3)
         self.coming_velocity = np.array([0.0,-0.0,-0.0])
-        self.g = np.array([0.0,-4.9,-0.0])
-        self.rho = 1
+        self.g = np.array([0.0,-9.8,-0.0])
+        self.rho = 0.1
         self.norm_world = np.zeros(3) 
         self.norm_body = np.array([0.0,1.0,0.0])
         self.prev_pos = np.zeros(3)
@@ -105,18 +105,17 @@ class Rigidbody:
             self.inertia_body += self.meshes[i].inertia
         
         self.inertia_body_inv = np.linalg.inv(self.inertia_body)
-        print(self.inertia_body)
-        print(self.inertia_body_inv)
+        
     
     def Initialize_dynamic(self, v_, angular_, R_,dt):
         self.velocities = v_
-        self.angular_momentum = angular_ * 0.001
+        self.angular_momentum = angular_ * 0.00001
         self.R = R_
         
         self.inertia_inv = self.R @ self.inertia_body_inv @ self.R.T
         self.inertia = self.R @ self.inertia_body @ self.R.T
         self.omega_vec =  self.inertia_inv @ self.angular_momentum
-        #print(self.omega_vec)
+        
         self.omega_mat = vector_to_matrix(self.omega_vec)
         for i in range(self.N):
             self.meshes[i].update(R_,self.omega_mat, self.position, self.velocities)
@@ -157,14 +156,12 @@ class Rigidbody:
     def advance(self, dt):
         if self.dt < dt:
             dt = self.dt
-        self.prev_pos = self.position
+        self.prev_pos = self.position.copy()
         self.R_prev = self.R
-        #print(dt)
-        #print(self.R)
-        # Initial state
-        #print('first',self.angular_momentum)
+        
         #print(self.velocities)
         self.apply_aero_force()
+        #print("momentum",self.tmp_momentum_add)
         #print('momentum',self.tmp_momentum_add)
         self.apply_torque_force()
         if self.index == 1:
@@ -196,9 +193,7 @@ class Rigidbody:
         self.tmp_angular_momentum_add = np.zeros(3)
         self.apply_aero_force()
         self.apply_torque_force()
-        if self.index == 1:
-            self.tmp_angular_momentum_add[0] = 0.0
-        print("torque",self.tmp_angular_momentum_add)
+        #print("torque",self.tmp_angular_momentum_add)
         
         b2_v = self.tmp_momentum_add / self.Mass
         c1_v = self.velocities + dt / 2 * b2_v
@@ -226,7 +221,7 @@ class Rigidbody:
         self.apply_torque_force()
         if self.index == 1:
             self.tmp_angular_momentum_add[0] = 0.0
-        #print(self.tmp_momentum_add)
+        #print(self.index," ",self.tmp_momentum_add,self.velocities)
         c2_v = self.tmp_momentum_add / self.Mass
         d1_v = self.velocities + dt * c2_v
         #print('d1',d1_v)
@@ -251,10 +246,11 @@ class Rigidbody:
             self.tmp_angular_momentum_add[0] = 0.0
         d2_v = self.tmp_momentum_add / self.Mass
         d2_L = self.tmp_angular_momentum_add
-
+        #print(self.position)
         self.position += (a1_v + 2 * b1_v + 2 * c1_v + d1_v) * dt / 6
+        #print(self.position)
         self.velocities += (a2_v + 2 * b2_v + 2 * c2_v + d2_v) * dt / 6
-
+        
         R_increase_tmp = self.compute_R(self.omega_vec, dt)
         self.R = R_increase_tmp @ self.R
         self.inertia_inv = R_tmp @ self.inertia_body_inv @ R_tmp.T
@@ -267,17 +263,19 @@ class Rigidbody:
 
         self.tmp_momentum_add = np.zeros(3)
         self.tmp_angular_momentum_add = np.zeros(3)
-        print('L',self.omega_vec)
+        #print('L',self.omega_vec)
         #print('final',self.angular_momentum)
         #print(self.velocities)
 
     def PostUpdate(self,dt):
         self.velocities = (self.position - self.prev_pos)/dt
+        #print(self.position)
+        #sprint(self.prev_pos)
         
         R_prev = self.R_prev
         R_after = self.R
-        print(R_prev)
-        print(R_after)
+        #print(R_prev)
+        #print(R_after)
         omega = compute_omega_from_quaternion(R_prev,R_after,dt)
         
         self.omega_vec = omega
@@ -288,7 +286,7 @@ class Rigidbody:
         for i in range(self.N):
             self.meshes[i].update(self.R, self.omega_mat, self.position, self.velocities)
         self.norm_world = self.R @ self.norm_body
-
+       
 
 
         

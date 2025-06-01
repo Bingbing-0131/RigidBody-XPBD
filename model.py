@@ -144,7 +144,7 @@ def main():
 
     rigid_body_1 = Rigidbody(num_mesh_1,0)
     
-    rho_ = 50*np.ones(num_mesh_1)  # Assign uniform density
+    rho_ = 1*np.ones(num_mesh_1)  # Assign uniform density
 
     rigid_body_1.Initialize_geometry(cor_1, rho_)
     v_1 = np.array([0.0, 0.0, 0.0])
@@ -171,7 +171,7 @@ def main():
     num_mesh = F_2.shape[0]
     rigid_body_2 = Rigidbody(num_mesh,1)
     print(rigid_body_2.position)
-    rho_ = 500*np.ones(num_mesh)  # Assign uniform density
+    rho_ = 10*np.ones(num_mesh)  # Assign uniform density
     
     rigid_body_2.Initialize_geometry(cor_, rho_)
     print(rigid_body_2.position)
@@ -201,7 +201,7 @@ def main():
     #num_mesh = F.shape[0]
     rigid_body_3 = Rigidbody(num_mesh_1,2)
     
-    rho_ = 50*np.ones(num_mesh_1)  # Assign uniform density
+    rho_ = 1*np.ones(num_mesh_1)  # Assign uniform density
     
     rigid_body_3.Initialize_geometry(cor_3, rho_)
     print(rigid_body_3.position)

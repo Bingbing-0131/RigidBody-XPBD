@@ -69,6 +69,6 @@ class Mesh:
         #self.relevant = coming_velocity - self.v
         #norm_velocity = np.dot(self.relevant, self.normal_world)
         #tangent_velocity = self.relevant - norm_velocity * self.normal_world
-        force = 2*1.26 * self.area * self.normal_world * np.dot(self.normal_world, (coming_velocity-self.v))*np.linalg.norm(coming_velocity-self.v)
+        force = 1.26 * self.area * self.normal_world * np.dot(self.normal_world, (coming_velocity-self.v))*np.linalg.norm(coming_velocity-self.v)
         #print('force',force,self.normal_world,self.v)
         return force
