@@ -8,6 +8,7 @@ from constraint import Hinge_Constraint
 import matplotlib.cm as cm 
 import polyscope as ps
 
+
 class multiple_body:
     def __init__(self, bodies):
         self.num_body = len(bodies)
@@ -64,12 +65,15 @@ class multiple_body:
             body.torque=np.zeros(3)
             
     '''
-    def simulate_with_polyscope(self,count):
+    def simulate_with_polyscope(self,step):
+        import polyscope as ps
+        ps.init()
         ps.set_up_dir("x_up")
         ps.set_ground_plane_mode("none")
 
         num_bodies = len(self.bodies)
-        colormap = cm.get_cmap("tab10", num_bodies)
+        colormap = cm._colormaps.get_cmap("tab10").resampled(num_bodies)
+
         colors = [colormap(i)[:3] for i in range(num_bodies)]
 
         for body_idx, body in enumerate(self.bodies):
@@ -80,37 +84,6 @@ class multiple_body:
 
             mesh = ps.register_surface_mesh(f"Body {body_idx + 1} Mesh", np.array(vertices), np.array(faces))
             mesh.set_color(colors[body_idx])
-
-        def callback():
-            for body_idx, body in enumerate(self.bodies):
-                vertices = [v.copy() for mesh in body.meshes for v in mesh.x]
-                ps.get_surface_mesh(f"Body {body_idx + 1} Mesh").update_vertex_positions(np.array(vertices))
-             
-        ps.set_user_callback(callback)
-        ps.screenshot('tmp/' + str(count) + '.jpg')
-    
-    '''  
-    def simulate_with_polyscope(self, steps):
-        import polyscope as ps
-        ps.init()
-        ps.set_up_dir("z_up")
-        ps.set_front_dir('y_front')
-        ps.set_ground_plane_mode("none")
-
-        num_bodies = len(self.bodies)
-        colormap = cm.get_cmap("tab10", num_bodies)
-        colors = [colormap(i)[:3] for i in range(num_bodies)]
-
-        for body_idx, body in enumerate(self.bodies):
-            vertices = [v.copy() for mesh in body.meshes for v in mesh.x]
-            faces = []  # Generate dummy faces for edges
-            for i in range(len(vertices)):
-                faces.append([i, (i + 1) % len(vertices)])  # Simple edge connections
-
-            mesh = ps.register_surface_mesh(f"Body {body_idx + 1} Mesh", np.array(vertices), np.array(faces))
-            mesh.set_color(colors[body_idx])
-
-        current_step = {"step": 0}
 
         def callback():
             step = current_step["step"]
@@ -124,11 +97,41 @@ class multiple_body:
                     vertices = [v.copy() for mesh in body.meshes for v in mesh.x]
                     ps.get_surface_mesh(f"Body {body_idx + 1} Mesh").update_vertex_positions(np.array(vertices))
                 current_step["step"] += 1
-            
+             
         ps.set_user_callback(callback)
-        ps.show()
+        ps.screenshot('tmp/' + str(step) + '.jpg')
     
+    '''  
+    def simulate_with_polyscope(self, steps):
+        import polyscope as ps
+        ps.init()
+        #ps.set_backend("none")  # headless mode
+        ps.set_up_dir("z_up")
+        ps.set_front_dir('y_front')
+        ps.set_ground_plane_mode("none")
 
+        num_bodies = len(self.bodies)
+        colormap = cm._colormaps.get_cmap("tab10").resampled(num_bodies)
+        colors = [colormap(i)[:3] for i in range(num_bodies)]
+
+        for body_idx, body in enumerate(self.bodies):
+            vertices = [v.copy() for mesh in body.meshes for v in mesh.x]
+            faces = []  # dummy faces
+            for i in range(len(vertices)):
+                faces.append([i, (i + 1) % len(vertices)])
+            mesh = ps.register_surface_mesh(f"Body {body_idx + 1} Mesh", np.array(vertices), np.array(faces))
+            mesh.set_color(colors[body_idx])
+
+        for step in range(steps):
+            t = step * self.dt
+            torque = -0.01
+            self.UpdateDynamics(torque, 0.0)
+
+            for body_idx, body in enumerate(self.bodies):
+                vertices = [v.copy() for mesh in body.meshes for v in mesh.x]
+                ps.get_surface_mesh(f"Body {body_idx + 1} Mesh").update_vertex_positions(np.array(vertices))
+
+            ps.screenshot(f"tmp/{step}.jpg")
 
 
 def main():
